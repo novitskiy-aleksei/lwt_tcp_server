@@ -1,0 +1,5 @@
+(library
+ (name client)
+ (libraries lwt lwt.unix lwt_ppx)
+ (preprocess (pps lwt_ppx))
+)
