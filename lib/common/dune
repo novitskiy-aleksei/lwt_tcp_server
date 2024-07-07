@@ -1,5 +1,5 @@
 (library
  (name common)
  (modules Client_pool)
- (libraries lwt.unix lwt_ppx)
+ (libraries uuidm lwt.unix lwt_ppx logs logs.lwt)
 )
