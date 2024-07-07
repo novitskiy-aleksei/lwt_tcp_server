@@ -22,9 +22,10 @@ let spawn_amount amount config =
 let disconnect_handler client =
   Lwt.catch
     (fun () ->
-      Lwt_io.read_line_opt client.ic >>= function
-      | Some _line -> Lwt.return_unit
-      | None -> remove_client client)
+      if (Lwt_io.is_closed client.ic) then
+        remove_client client
+      else
+        Lwt.return_unit)
     (fun _ex -> remove_client client)
 
 let handle_disconnections () =
