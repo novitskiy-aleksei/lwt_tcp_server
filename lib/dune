@@ -1,4 +1,3 @@
 (library
  (name tcp_server)
-; (modules common client server spawn_manager)
 )

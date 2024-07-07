@@ -2,6 +2,6 @@
  (public_name tcp_server)
  (name main)
  (modules main main_extensions)
- (libraries tcp_server common client spawn_manager server lwt lwt.unix logs logs.lwt lwt_ppx)
+ (libraries tcp_server client spawn_manager server lwt lwt.unix logs logs.lwt lwt_ppx)
  (preprocess (pps lwt_ppx))
 )

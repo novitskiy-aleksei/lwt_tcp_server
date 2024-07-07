@@ -1,5 +1,5 @@
 (library
  (name spawn_manager)
- (libraries common client lwt lwt.unix lwt_ppx logs logs.lwt)
+ (libraries client lwt lwt.unix lwt_ppx logs logs.lwt)
  (preprocess (pps lwt_ppx))
 )

@@ -7,41 +7,61 @@ type connection_config = {
   port: int;
 }
 
-let set_keepalive socket =
-  Lwt_unix.setsockopt socket SO_KEEPALIVE true;
-  Lwt.return_unit
-
-let send_message oc message =
+let send_message sock message =
   Logs_lwt.info (fun m -> m "[Client] Send message '%s'" message) >>= fun () ->
-  Lwt_io.write_line oc message >>= fun () ->
-  Logs_lwt.info (fun m -> m "[Client] Message '%s' sent successfully" message)
+  let oc = Lwt_io.of_fd ~mode:Lwt_io.Output sock in
+  Lwt_io.fprintl oc message
 
-let acknowledge_message oc =
-  send_message oc "OK"
+let disconnect sock =
+  Lwt_unix.close sock  >>= fun () ->
+  Logs_lwt.info (fun m -> m "[Client] Disconnecting client")
 
-let disconnect ic oc =
-  Logs_lwt.info (fun m -> m "[Client] Disconnecting client") >>= fun () ->
-  Lwt_io.close ic >>= fun () ->
-  if not (Lwt_io.is_closed oc) then
-    Lwt_io.close oc
+let send_ack sock msg =
+  send_message sock ("Ack: " ^ string_of_int (String.length msg))
+
+let rec receive_messages sock =
+  let ic = Lwt_io.of_fd ~mode:Lwt_io.Input sock in
+  if Lwt_unix.state sock = Lwt_unix.Closed then
+    Logs_lwt.info (fun m -> m "[Client] Socket is already closed") >>= fun () ->
+    Lwt.return ()
   else
-    Lwt.return_unit
+    Lwt_io.read_line_opt ic >>= function
+    | Some msg ->
+      send_ack sock msg >>= fun () ->
+      receive_messages sock
+    | None ->
+      Logs_lwt.info (fun m -> m "[Client] Connection closed by server") >>= fun () ->
+      Lwt.return ()
+
+let send_keep_alive sock =
+  let rec loop () =
+    Lwt_unix.sleep (float_of_int (Random.int 15 + 0)) >>= fun () ->
+    if Lwt_unix.state sock <> Lwt_unix.Closed then
+      send_message sock "я живий" >>= fun () ->
+      loop ()
+    else
+      Lwt.return ()
+  in
+  loop ()
+
+let simulate_client_life sock =
+  Lwt_unix.sleep (float_of_int (Random.int 10 + 0)) >>= fun () ->
+  disconnect sock
+
+let connect_to_server address port =
+  let sock = socket PF_INET SOCK_STREAM 0 in
+  setsockopt sock SO_KEEPALIVE true;
+  let sockaddr = ADDR_INET (address, port) in
+  Lwt_unix.connect sock sockaddr >|= fun () ->
+  sock
 
 let connect (config : connection_config) =
-  let sockaddr = Unix.ADDR_INET (config.address, config.port) in
-  let socket = Lwt_unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-
-  Lwt_unix.connect socket sockaddr >>= fun () ->
-  set_keepalive socket >>= fun () ->
-  let ic = Lwt_io.of_fd ~mode:Lwt_io.Input socket in
-  let oc = Lwt_io.of_fd ~mode:Lwt_io.Output socket in
+  let%lwt socket = connect_to_server config.address config.port in
 
   Logs_lwt.info (fun m -> m "[Client] Connected to server") >>= fun () ->
 
-(*  let bound_send_message = send_message oc in *)
-(*  let bound_disconnect = fun () -> disconnect ic oc in *)
-(*  *)
-(*  Random_behavior.attach bound_send_message bound_disconnect; *)
-
-  Random_behavior.attach ic oc;
-  Lwt.return (ic, oc)
+  Lwt.join [
+    receive_messages socket;
+    send_keep_alive socket;
+    simulate_client_life socket;
+  ]
