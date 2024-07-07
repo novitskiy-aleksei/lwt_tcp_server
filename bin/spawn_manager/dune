@@ -1,5 +1,0 @@
-(library
- (name spawn_manager)
- (libraries client lwt lwt.unix lwt_ppx)
- (preprocess (pps lwt_ppx))
-)
