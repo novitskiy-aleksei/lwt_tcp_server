@@ -1,6 +1,6 @@
 (library
  (name client)
  (modules client random_behavior)
- (libraries lwt lwt.unix lwt_ppx)
+ (libraries lwt lwt.unix lwt_ppx logs logs.lwt)
  (preprocess (pps lwt_ppx))
 )
