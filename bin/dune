@@ -1,7 +1,7 @@
 (executable
  (public_name tcp_server)
  (name main)
- (modules main main_extensions)
- (libraries tcp_server client spawn_manager server lwt lwt.unix logs logs.lwt lwt_ppx)
+ (modules main log_settings)
+ (libraries tcp_server client spawn_manager server lwt lwt.unix logs logs.lwt lwt_ppx fmt logs.fmt)
  (preprocess (pps lwt_ppx))
 )

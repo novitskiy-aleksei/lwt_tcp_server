@@ -1,19 +1,22 @@
 let listen_address = Unix.inet_addr_any
-let listen_port = 54322
+let listen_port = 54321
+let log_file = "tcp_app.log"
+
+
+let get_clients_number () =
+  let args = Sys.argv in
+  if Array.length args < 2
+    then failwith "Usage: tcp_server <number_of_processes>"
+    else int_of_string args.(1)
 
 let main () =
-  Logs.set_reporter (Logs.format_reporter ());
-  Logs.set_level (Some Logs.Debug);
-
-  let clients_number = Main_extensions.get_clients_number () in
+  Log_settings.setup log_file;
 
   let server_task = Server.setup_server listen_address listen_port in
-(*  let console_task = Server.read_console () in *)
-  let spawn_manager_task = Spawn_manager.keep clients_number { address = listen_address; port = listen_port } in
+  let spawn_manager_task = Spawn_manager.keep (get_clients_number ()) { address = listen_address; port = listen_port } in
 
   Lwt.join [
     server_task;
-(*    console_task; *)
     spawn_manager_task
   ]
 
