@@ -4,4 +4,4 @@ let setup file_path =
   let reporter = Logs_fmt.reporter ~app:log_formatter () in
   Logs.set_reporter reporter;
   Logs.set_level (Some Logs.Info);
-  at_exit (fun () -> close_out log_out);
+  at_exit (fun () -> close_out log_out)
